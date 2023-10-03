@@ -17,6 +17,7 @@ end
 function move_1!(robot, side, n)
     while n > 0 && isborder(robot, Nord)
         move!(robot, side)
+        n -= 1
     end
 end
 
