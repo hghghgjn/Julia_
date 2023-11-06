@@ -1,31 +1,54 @@
 using HorizonSideRobots
 
-r = Robot("26_1.sit"; animate=true)
+robot = Robot("26_1.sit"; animate=true)
+
+HSR = HorizonSideRobots
+
+abstract type AbstractRobot end
+
+HSR.move!(r::AbstractRobot, side) = move!(get_baserobot(r), side)
+
+HSR.isborder(r::AbstractRobot, side) = isborder(get_baserobot(r), side)
+
+mutable struct ChesmarkerRobot <: AbstractRobot
+    robot::Robot 
+    x::Int
+    y::Int
+end
+
+get_baserobot(r::ChesmarkerRobot) = r.robot
+
+HSR.move!(r::ChesmarkerRobot, side) = begin
+    if ((r.x + r.y) % 2) == 0
+        putmarker!(r.robot)
+    end
+    move!(r.robot, side)
+    if side == Nord
+        r.y += 1
+    elseif side == West
+        r.x -= 1
+    elseif side == Sud
+        r.y -= 1
+    else
+        r.x += 1
+    end
+end
 
 inverse(s::HorizonSide) = HorizonSide(mod(Int(s)+2, 4))
 
-function lab!(robot, x, y, coords::Set)
-    if ! ((x , y) in coords)
-        push!(coords, (x, y))
-        if ((x + y) % 2) == 0
-            putmarker!(robot)
-        end
+robot = ChesmarkerRobot(robot, 0, 0)
+
+function lab!(robot, coords::Set)
+    if ! ((robot.x , robot.y) in coords)
+        push!(coords, (robot.x, robot.y))
         for side in (Nord, West, Sud, Ost)
             if ! isborder(robot, side)
                 move!(robot, side)
-                if side == Nord
-                    lab!(robot, x, y + 1, coords)
-                elseif side == West
-                    lab!(robot, x - 1, y, coords)
-                elseif side == Sud
-                    lab!(robot, x, y - 1, coords)
-                else
-                    lab!(robot, x + 1, y, coords)
-                end
+                lab!(robot, coords)
                 move!(robot, inverse(side))
             end
         end
     end
 end
 
-lab!(r, 0, 0, Set())
+lab!(robot, Set())
